@@ -6,10 +6,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.journalapp.filter.JwtFilter;
 import com.journalapp.service.CustomUserDetailImpl;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -21,19 +24,20 @@ public class SecurityConfig {
 
     @Autowired
     private CustomUserDetailImpl customUserDetailImpl;
+    @Autowired
+    private JwtFilter jwtFilter;
 
     //step 2
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/journal/**","/public/**").authenticated()
+    	return http.authorizeHttpRequests(request -> request
+                .requestMatchers("/public/**").permitAll()
+                .requestMatchers("/journal/**", "/user/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().permitAll() // Permit all other requests
-            )
-            .httpBasic(withDefaults()); // Use HTTP Basic authentication
-        http.csrf().disable();
-        return http.build();
+                .anyRequest().authenticated())
+        .csrf(AbstractHttpConfigurer::disable)
+        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+        .build();
     }
 
     @Bean

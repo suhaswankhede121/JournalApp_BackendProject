@@ -18,13 +18,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.journalapp.apiresponce.WheatherResponse;
 import com.journalapp.entity.User;
 import com.journalapp.repository.UserRepository;
 import com.journalapp.service.UserService;
+import com.journalapp.service.WheatherService;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
+	
+	
+	@Autowired
+	private WheatherService wheatherService;
 
 	@Autowired
 	private UserService userService;
@@ -62,6 +68,17 @@ public class UserController {
 		Authentication auth=SecurityContextHolder.getContext().getAuthentication();
 		userRepository.deleteByUsername(auth.getName());
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	}
+	
+	@GetMapping("/greet")
+	public ResponseEntity<?> greetings(){
+		Authentication auth=SecurityContextHolder.getContext().getAuthentication();
+		WheatherResponse res=wheatherService.getWheather("pune");
+		String greet="";
+		if(res!=null) {
+			greet=", Wheather Tempreture is "+res.getCurrent().getTemperature();
+		}
+		return new ResponseEntity<>("Hi "+auth.getName()+greet,HttpStatus.OK);
 	}
 	
 }
